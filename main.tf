@@ -16,3 +16,22 @@ resource "cloudflare_record" "sub" {
   ttl     = var.ttl
   value   = google_dns_managed_zone.sub.name_servers[count.index]
 }
+
+resource "null_resource" "wait" {
+  # Give the NS record some time to propagate
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+
+  depends_on = [
+    cloudflare_record.sub,
+  ]
+}
+
+data "dns_ns_record_set" "sub" {
+  host = local.sub_domain_dns_name
+
+  depends_on = [
+    null_resource.wait,
+  ]
+}
